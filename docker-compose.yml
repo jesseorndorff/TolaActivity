@@ -7,8 +7,11 @@ nginx:
    volumes:
       - .:/home/TolaActivity
       - ./config/nginx.conf:/etc/nginx/conf.d/default.conf
+      - /etc/letsencrypt/live/activity.toladata.io/fullchain.pem:/etc/letsencrypt/live/activity.toladata.io/fullchain.pem
+      - /etc/letsencrypt/live/activity.toladata.io/privkey.pem:/etc/letsencrypt/live/activity.toladata.io/privkey.pem
    ports:
       - "80:80"
+      - "443:443"
    links:
       - tola
 tola:
