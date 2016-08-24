@@ -26,6 +26,7 @@ class TolaSites(models.Model):
     name = models.CharField(blank=True, null=True, max_length=255)
     agency_name = models.CharField(blank=True, null=True, max_length=255)
     agency_url = models.CharField(blank=True, null=True, max_length=255)
+    tola_report_url = models.CharField(blank=True, null=True, max_length=255)
     tola_tables_url = models.CharField(blank=True, null=True, max_length=255)
     tola_tables_user = models.CharField(blank=True, null=True, max_length=255)
     tola_tables_token = models.CharField(blank=True, null=True, max_length=255)
@@ -786,7 +787,7 @@ class Stakeholder(models.Model):
 class StakeholderAdmin(admin.ModelAdmin):
     list_display = ('name', 'type', 'country', 'create_date')
     display = 'Stakeholders'
-    list_filter = ('create_date','country','type','sector')
+    list_filter = ('country','type','sector')
 
 
 class ProjectAgreementManager(models.Manager):
@@ -1206,7 +1207,8 @@ class TrainingAttendance(models.Model):
 
 class TrainingAttendanceAdmin(admin.ModelAdmin):
     list_display = ('training_name', 'program', 'project_agreement', 'create_date', 'edit_date')
-    display = 'Program Dashboard'
+    display = 'Training Attendance'
+    list_filter = ('program__country','program')
 
 
 class Beneficiary(models.Model):
@@ -1219,6 +1221,7 @@ class Beneficiary(models.Model):
     site = models.ForeignKey(SiteProfile, null=True, blank=True)
     signature = models.BooleanField(default=True)
     remarks = models.CharField(max_length=255, null=True, blank=True)
+    program = models.ManyToManyField('Program', blank=True)
     create_date = models.DateTimeField(null=True, blank=True)
     edit_date = models.DateTimeField(null=True, blank=True)
 
@@ -1238,7 +1241,9 @@ class Beneficiary(models.Model):
 
 
 class BeneficiaryAdmin(admin.ModelAdmin):
-    list_display = ('beneficiary_name', 'father_name', 'age', 'gender', 'community', 'signature', 'remarks', 'initials')
+    list_display = ('beneficiary_name',)
+    display = 'Beneficiary'
+    list_filter = ('program__country','program__name')
 
 
 class Checklist(models.Model):
@@ -1366,6 +1371,52 @@ class FAQ(models.Model):
 class FAQAdmin(admin.ModelAdmin):
     list_display = ( 'question', 'answer', 'create_date',)
     display = 'FAQ'
+
+#Logged users
+from django.contrib.auth.signals import user_logged_in, user_logged_out 
+from urllib2 import urlopen
+import json
+
+
+class LoggedUser(models.Model):
+
+    username = models.CharField(max_length=30, primary_key=True)
+    country = models.CharField(max_length=100, blank=False)
+    email = models.CharField(max_length=100, blank=False, default='user@mercycorps.com')
+    
+    def __unicode__(self):
+        return self.username
+
+    def login_user(sender, request, user, **kwargs):
+        country = get_user_country(request)
+
+        LoggedUser(username=user.username, country=country, email=user.email).save()
+
+    def logout_user(sender, request, user, **kwargs):
+
+        try:
+            user = LoggedUser.objects.get(pk=user.username)
+            user.delete()
+
+        except LoggedUser.DoesNotExist:
+            pass
+        
+    user_logged_in.connect(login_user)
+    user_logged_out.connect(logout_user)
+
+
+def get_user_country(request):
+
+    # Automatically geolocate the connecting IP
+    ip = request.META.get('REMOTE_ADDR')
+    try:
+        response = urlopen('http://ipinfo.io/'+ip+'/json').read()
+        response = json.loads(response)
+        return response['country'].lower()
+
+    except Exception, e:
+        response = "undefined"
+        return response
 
 
 class Distribution(models.Model):
