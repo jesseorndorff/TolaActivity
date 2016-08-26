@@ -1138,7 +1138,7 @@ class MonitorAdmin(admin.ModelAdmin):
 class Budget(models.Model):
     contributor = models.CharField(max_length=135, blank=True, null=True)
     description_of_contribution = models.CharField(max_length=255, blank=True, null=True)
-    proposed_value = models.IntegerField("Actual Value",default=0, blank=True, null=True)
+    proposed_value = models.IntegerField("Value",default=0, blank=True, null=True)
     agreement = models.ForeignKey(ProjectAgreement, blank=True, null=True, verbose_name="Project Initiation")
     complete = models.ForeignKey(ProjectComplete, blank=True, null=True, on_delete=models.SET_NULL)
     create_date = models.DateTimeField(null=True, blank=True)
@@ -1279,6 +1279,7 @@ class ChecklistItem(models.Model):
     in_file = models.BooleanField(default=False)
     not_applicable = models.BooleanField(default=False)
     global_item = models.BooleanField(default=False)
+    owner = models.ForeignKey(TolaUser, null=True, blank=True)
     create_date = models.DateTimeField(null=True, blank=True)
     edit_date = models.DateTimeField(null=True, blank=True)
 
